@@ -119,7 +119,29 @@ function CrashPanel({balance, setBalance, pushResult, globalLock, setGlobalLock}
   const accel = 1.6 // exponent for speed growth
 
   useEffect(()=>{
-    return ()=>{ if(rafRef.current) cancelAnimationFrame(rafRef.current) }
+    
+function primaryAction(){
+  // Mirror Mines' primary button semantics: Start -> Cash Out -> New Game
+  if (!isRunning && cashedAt === null){
+    // idle -> start
+    if (typeof start === 'function') start()
+    return
+  }
+  if (isRunning && cashedAt === null){
+    // running -> cash out
+    if (typeof doCashout === 'function') doCashout()
+    return
+  }
+  if (!isRunning && cashedAt !== null){
+    // ended and cashed -> reset for new game
+    setCashedAt(null)
+    setMultiplier(1.00) // restore starting multiplier display
+    multiplierRef.current = 1.00
+    return
+  }
+}
+
+return ()=>{ if(rafRef.current) cancelAnimationFrame(rafRef.current) }
   },[])
 
   function computeTargetFromSeed(){
@@ -196,24 +218,10 @@ function CrashPanel({balance, setBalance, pushResult, globalLock, setGlobalLock}
         </div>
         <div style={{marginLeft:'auto'}} className="small">Target (hidden)</div>
         <div>
-          
-          <div style={{display:'flex', justifyContent:'center', marginTop:12}}>
-            <button
-              className="btn primary"
-              onClick={() => {
-                if (phase === 'idle') startGame();
-                else if (phase === 'playing') cashOut();
-                else resetGame();
-              }}
-              style={{minWidth:260}}
-            >
-              {phase==='idle' ? 'Start' : phase==='playing' ? 'Cash Out' : 'New Game'}
-            </button>
-          </div>
-
+          <button className="btn primary" onClick={start} disabled={isRunning || globalLock}>Start</button>
         </div>
         <div>
-          <button className="btn ghost" onClick={doCashout} disabled={!isRunning || cashedAt!==null}>Cash Out</button>
+          
         </div>
       </div>
 
@@ -334,19 +342,11 @@ function MinesPanel({balance, setBalance, pushResult, globalLock, setGlobalLock}
         Potential payout: <strong>{live.payout.toFixed(2)} ({live.multiplier.toFixed(2)}x)</strong> — Potential profit: <strong style={{color: live.profit>=0? 'var(--win)': 'var(--loss)'}}>{live.profit>=0?`+${live.profit.toFixed(2)}`:live.profit.toFixed(2)}</strong>
       </div>
 
-      <div className="grid mines" role="grid" style={{ width: "100%", maxWidth: "700px", margin: "0 auto" }}>
+      <div className="grid mines" role="grid">
         {Array.from({length: total}).map((_, idx)=>{
           const isRevealed = !!revealed[idx]
           const isMine = minePositions.includes(idx)
-          return (
-            <button
-              key={idx}
-              onClick={() => clickTile(idx)}
-              disabled={phase !== 'playing' || !!revealed[idx]}
-              className="tile aspect-square w-full rounded-xl"
-            >
-              {revealed[idx] ? (minePositions.includes(idx) ? '💣' : '✓') : ''}
-            </button>)
+          return <button key={idx} onClick={()=>clickTile(idx)} disabled={phase!=='playing'} className={'tile ' + (isRevealed ? (isMine ? 'mine' : 'safe') : '')}>{isRevealed ? (isMine ? '💣' : '✓') : ''}</button>
         })}
       </div>
 

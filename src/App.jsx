@@ -240,7 +240,9 @@ return ()=>{ if(rafRef.current) cancelAnimationFrame(rafRef.current) }
   )
 }
 
-/* ================= MinesPanel ================= */
+}
+
+  /* ================= MinesPanel ================= */
 function MinesPanel({balance, setBalance, pushResult, globalLock, setGlobalLock}){
   const rows = 5, cols = 5, total = rows * cols
   const [mines, setMines] = useState(3)

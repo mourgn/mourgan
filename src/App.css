@@ -1,0 +1,201 @@
+
+
+/* Tab content transition */
+.tab-content {
+  opacity: 1;
+  transform: translateX(0);
+  transition: opacity 0.3s ease, transform 0.3s ease;
+}
+.tab-content.hidden {
+  opacity: 0;
+  transform: translateX(20px);
+  pointer-events: none;
+  position: absolute;
+}
+
+
+/* Smooth glowing hover effects */
+button, .big-button, .nav-btn {
+  transition: all 0.25s ease-in-out, box-shadow 0.25s ease-in-out;
+}
+button:hover, .big-button:hover, .nav-btn:hover {
+  transform: scale(1.05);
+  box-shadow: 0 0 16px rgba(160, 100, 255, 0.6);
+}
+button:active, .big-button:active, .nav-btn:active {
+  transform: scale(0.97);
+}
+
+/* Card / panel glow effect */
+.game-panel, .history-panel {
+  transition: box-shadow 0.3s ease-in-out;
+}
+.game-panel:hover, .history-panel:hover {
+  box-shadow: 0 0 20px rgba(160, 100, 255, 0.4);
+}
+
+/* === Dark Mode Animated Background === */
+body, #root {
+  margin: 0;
+  min-height: 100vh;
+  background: linear-gradient(-45deg, #050505, #0a0a0f, #140021, #2b0044);
+  background-size: 400% 400%;
+  animation: gradientShift 25s ease infinite;
+  color: #e5e5e5;
+}
+@keyframes gradientShift {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+/* Sticky header */
+header {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  background: rgba(10, 0, 20, 0.8);
+  backdrop-filter: blur(10px);
+}
+
+/* Sidebar restored to narrow width */
+.sidebar {
+  width: 220px !important;
+  min-width: 220px !important;
+  background: rgba(20,20,30,0.8);
+}
+
+/* Main game area stretches */
+.main {
+  flex: 1;
+  width: auto !important;
+}
+
+/* Panels light-ish with rounded corners */
+.panel, .content, .game-panel {
+  background: #f9f9fb;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.25);
+  padding: 16px;
+}
+
+/* Balance + topup styling */
+.header-balance {
+  font-size: 1.2rem;
+  font-weight: bold;
+  color: #c5a6ff;
+}
+.topup-btn {
+  padding: 6px 12px;
+  border-radius: 8px;
+  background: #7c3aed;
+  color: white;
+  border: none;
+  cursor: pointer;
+}
+.topup-btn:hover {
+  background: #9d4edd;
+  box-shadow: 0 0 10px #9d4edd;
+}
+
+/* Hide unwanted demo/seed/target labels */
+.demo-label, .seed, .target {
+  display: none !important;
+}
+
+/* === Dark Mode Translucent Panels === */
+.panel, .content, .game-panel {
+  background: rgba(20, 20, 30, 0.6); /* translucent dark */
+  border: 1px solid rgba(124, 58, 237, 0.4); /* faint purple border */
+  border-radius: 12px;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.4);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  color: #f1f1f1;
+}
+
+/* Injected autoscroll CSS */
+
+/* Autoscroll / recent winnings styling */
+.recent-list, .recent-winnings, .recent-container {
+  overflow-y: auto;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  scroll-behavior: smooth;
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
+  padding-bottom: 12px;
+}
+.recent-list::-webkit-scrollbar, 
+.recent-winnings::-webkit-scrollbar,
+.recent-container::-webkit-scrollbar {
+  width: 0;
+  height: 0;
+  display: none;
+}
+
+/* Injected polished autoscroll CSS */
+
+/* Polished autoscroll + entry animations (injected) */
+
+/* Ensure recent container can flex to fill */
+.recent-list, .recent-winnings, .recent-container, .mourgan-hide-scroll {
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  scroll-behavior: smooth;
+  flex: 1 1 auto;
+  padding: 12px;
+}
+
+/* Hide scrollbars instantly */
+.recent-list::-webkit-scrollbar, .recent-winnings::-webkit-scrollbar, .recent-container::-webkit-scrollbar {
+  display: none; width: 0; height: 0;
+}
+
+/* New entry animation */
+@keyframes mourganEntryIn {
+  0% { opacity: 0; transform: translateY(12px) scale(1.05); filter: drop-shadow(0 0 0 rgba(0,0,0,0)); }
+  60% { opacity: 1; transform: translateY(0px) scale(1.07); }
+  100% { opacity: 1; transform: translateY(0px) scale(1); }
+}
+
+/* Glow (outer) for wins and losses */
+.mourgan-glow-win {
+  box-shadow: 0 8px 30px rgba(0, 204, 102, 0.28);
+}
+.mourgan-glow-loss {
+  box-shadow: 0 8px 30px rgba(204, 0, 51, 0.28);
+}
+
+/* Apply animation - duration and easing tuned for polished feel */
+.mourgan-new-entry {
+  opacity: 0;
+  transform-origin: center;
+  animation-name: mourganEntryIn;
+  animation-duration: 0.6s;
+  animation-timing-function: cubic-bezier(.2,.9,.25,1);
+  animation-fill-mode: forwards;
+}
+
+/* Glow linger transition */
+.mourgan-glow-anim {
+  transition: box-shadow 1.2s ease-out, transform 0.6s cubic-bezier(.2,.9,.25,1);
+}
+
+/* small bounce on settle (barely noticeable) */
+@keyframes mourganSettle {
+  0% { transform: scale(1.07); }
+  60% { transform: scale(0.995); }
+  100% { transform: scale(1); }
+}
+.mourgan-settle { animation: mourganSettle 0.45s cubic-bezier(.2,.9,.25,1) forwards; }
+
+/* spacing transition when new items push others */
+.recent-list > * {
+  transition: margin 0.35s ease, transform 0.35s ease;
+  margin-bottom: 8px;
+}

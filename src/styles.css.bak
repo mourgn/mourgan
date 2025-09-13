@@ -28,8 +28,8 @@ body{margin:0;background:linear-gradient(180deg,var(--bg),#050310);font-family:I
 .recent-item.win{color:var(--win)}
 .recent-item.loss{color:var(--loss)}
 .grid{display:grid;gap:10px}
-.grid.mines{grid-template-columns: repeat(5, minmax(120px, 1fr)); gap:12px; justify-content:center;}
-.tile{width:100%;aspect-ratio:1/1;border-radius:12px;border:1px solid rgba(255,255,255,0.02);display:flex;align-items:center;justify-content:center;font-weight:800;background:rgba(255,255,255,0.02);cursor:pointer;font-size:1.6rem;}
+.grid.mines{grid-template-columns:repeat(5,64px);justify-content:start}
+.tile{width:64px;height:64px;border-radius:8px;border:1px solid rgba(255,255,255,0.04);display:flex;align-items:center;justify-content:center;font-weight:800;background:rgba(255,255,255,0.02);cursor:pointer}
 .tile.safe{background:rgba(16,185,129,0.15);color:var(--win)}
 .tile.mine{background:rgba(239,68,68,0.15);color:var(--loss)}
   .recent-list{margin-top:12px;flex:1;overflow:auto;display:flex;flex-direction:column;}

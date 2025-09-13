@@ -109,12 +109,11 @@ export default function App(){
 function CrashPanel({balance, setBalance, pushResult, globalLock, setGlobalLock}){
   const [bet, setBet] = useState(10)
   const [isRunning, setIsRunning] = useState(false)
-  const [multiplier, setMultiplier] = useState(0.00)
+  const [multiplier, setMultiplier] = useState(1.00)
   const [cashedAt, setCashedAt] = useState(null)
   const rafRef = useRef(null)
   const lastRef = useRef(null)
-  const multiplierRef = useRef(0.00)
-  const cashedRef = useRef(null)
+  const multiplierRef = useRef(1.00)
   const [target, setTarget] = useState(2.0)
   const baseSpeedRef = useRef(0.7) // tuning value
   const accel = 1.6 // exponent for speed growth
@@ -123,23 +122,22 @@ function CrashPanel({balance, setBalance, pushResult, globalLock, setGlobalLock}
     return ()=>{ if(rafRef.current) cancelAnimationFrame(rafRef.current) }
   },[])
 
-  function computeTargetFromSeed() {
-  const r = Math.random();
-  if (r < 0.65) return +(Math.random() * 0.9).toFixed(2);      // 65% chance bust <1.0x
-  if (r < 0.90) return +(1 + Math.random() * 1.5).toFixed(2);  // 25% chance 1.0–2.5x
-  return +(2.5 + Math.random() * 5).toFixed(2);                // 10% chance 2.5–7.5x
-}
+  function computeTargetFromSeed(){
+    // generate a random-ish crash point using Math.random ()
+    const r = Math.random()
+    const val = 1 + Math.pow(1 - r, -1.1) * 0.6
+    return Math.round(Math.max(1.01, val) * 100) / 100
+  }
 
   function start(){
     if (isRunning || bet <= 0) return
     if (bet > balance){ alert('Insufficient balance'); return }
     // deduct bet immediately
     setBalance(b => Math.round((b - bet)*100)/100)
-    cashedRef.current = null
     setCashedAt(null)
     setIsRunning(true)
-    setMultiplier(0.00)
-    multiplierRef.current = 0.00
+    setMultiplier(1.00)
+    multiplierRef.current = 1.00
     lastRef.current = null
     const t = computeTargetFromSeed()
     setTarget(t)
@@ -160,16 +158,6 @@ function CrashPanel({balance, setBalance, pushResult, globalLock, setGlobalLock}
 
     // bust check
     if (multiplierRef.current >= target){
-      setIsRunning(false)
-      setGlobalLock(false)
-      if (cashedRef.current === null) {
-        pushResult({ game: 'Crash', bet: bet, payout: 0, profit: -bet, time: Date.now() })
-      }
-      if (rafRef.current) cancelAnimationFrame(rafRef.current)
-      rafRef.current = null
-      lastRef.current = null
-      return
-    
       // bust event
       setIsRunning(false)
       setGlobalLock(false)
@@ -195,31 +183,9 @@ function CrashPanel({balance, setBalance, pushResult, globalLock, setGlobalLock}
     const profit = Math.round((payout - bet) * 100) / 100
     setBalance(b => Math.round((b + payout) * 100) / 100)
     setCashedAt(m)
-    cashedRef.current = m
     // record result now (user explicitly cashed out)
     pushResult({ game: 'Crash', bet: bet, payout: payout, profit: profit, time: Date.now() })
-    if (rafRef.current) cancelAnimationFrame(rafRef.current)
-    rafRef.current = null
-    setIsRunning(false)
-    setGlobalLock(false)
   }
-  function primaryAction(){
-    if (!isRunning) {
-      start()
-      return
-    }
-    // if running and not cashed, cash out
-    if (isRunning && cashedAt === null) {
-      doCashout()
-      return
-    }
-    // if round ended or cashed, reset for new game
-    if (!isRunning && cashedAt !== null) {
-      setCashedAt(null)
-      setMultiplier(0.00)
-    }
-  }
-
 
   return (
     <div style={{display:'flex',flexDirection:'column',gap:12}}>
@@ -229,9 +195,26 @@ function CrashPanel({balance, setBalance, pushResult, globalLock, setGlobalLock}
           <input className="input" type="number" value={bet} onChange={e=>setBet(Number(e.target.value)||0)} />
         </div>
         <div style={{marginLeft:'auto'}} className="small">Target (hidden)</div>
-        <div style={{display:'flex',gap:12,alignItems:'center'}}>
-            <button className={'btn primary'} onClick={primaryAction}>{isRunning? 'Cash Out' : cashedAt ? 'New Game' : 'Start'}</button>
+        <div>
+          
+          <div style={{display:'flex', justifyContent:'center', marginTop:12}}>
+            <button
+              className="btn primary"
+              onClick={() => {
+                if (phase === 'idle') startGame();
+                else if (phase === 'playing') cashOut();
+                else resetGame();
+              }}
+              style={{minWidth:260}}
+            >
+              {phase==='idle' ? 'Start' : phase==='playing' ? 'Cash Out' : 'New Game'}
+            </button>
           </div>
+
+        </div>
+        <div>
+          <button className="btn ghost" onClick={doCashout} disabled={!isRunning || cashedAt!==null}>Cash Out</button>
+        </div>
       </div>
 
       <div style={{display:'flex',alignItems:'center',justifyContent:'center',height:220}} className="panel">
@@ -351,7 +334,7 @@ function MinesPanel({balance, setBalance, pushResult, globalLock, setGlobalLock}
         Potential payout: <strong>{live.payout.toFixed(2)} ({live.multiplier.toFixed(2)}x)</strong> — Potential profit: <strong style={{color: live.profit>=0? 'var(--win)': 'var(--loss)'}}>{live.profit>=0?`+${live.profit.toFixed(2)}`:live.profit.toFixed(2)}</strong>
       </div>
 
-      <div className="grid mines" role="grid" style={{width: "100%", maxWidth: "700px", margin: "0 auto"}}>
+      <div className="grid mines" role="grid" style={{ width: "100%", maxWidth: "700px", margin: "0 auto" }}>
         {Array.from({length: total}).map((_, idx)=>{
           const isRevealed = !!revealed[idx]
           const isMine = minePositions.includes(idx)
@@ -360,12 +343,10 @@ function MinesPanel({balance, setBalance, pushResult, globalLock, setGlobalLock}
               key={idx}
               onClick={() => clickTile(idx)}
               disabled={phase !== 'playing' || !!revealed[idx]}
-              className={'tile ' + (isRevealed ? (isMine ? 'mine' : 'safe') : '')}
-              style={{aspectRatio: '1/1', fontSize: '1.6rem'}}
+              className="tile aspect-square w-full rounded-xl"
             >
-              {isRevealed ? (isMine ? '💣' : '✓') : ''}
-            </button>
-          )
+              {revealed[idx] ? (minePositions.includes(idx) ? '💣' : '✓') : ''}
+            </button>)
         })}
       </div>
 

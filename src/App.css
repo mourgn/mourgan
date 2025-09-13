@@ -113,3 +113,42 @@ header {
   -webkit-backdrop-filter: blur(12px);
   color: #f1f1f1;
 }
+
+
+/* Hide scrollbar instantly */
+.recent-winnings::-webkit-scrollbar {
+  display: none;
+}
+.recent-winnings {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+  scroll-behavior: smooth;
+}
+
+/* New entry animation */
+.recent-entry {
+  opacity: 0;
+  transform: translateY(10px) scale(0.95);
+  animation: entryFade 0.8s ease forwards;
+}
+.recent-entry.win {
+  box-shadow: 0 0 12px rgba(0, 255, 0, 0.35);
+}
+.recent-entry.loss {
+  box-shadow: 0 0 12px rgba(255, 0, 0, 0.35);
+}
+
+@keyframes entryFade {
+  0% {
+    opacity: 0;
+    transform: translateY(10px) scale(0.95);
+  }
+  60% {
+    opacity: 1;
+    transform: translateY(-2px) scale(1.02);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}

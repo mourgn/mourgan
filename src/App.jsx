@@ -231,7 +231,23 @@ function CrashPanel({balance, setBalance, pushResult, globalLock, setGlobalLock}
 }
 
 /* ================= MinesPanel ================= */
-function MinesPanel({balance, setBalance, pushResult, globalLock, setGlobalLock}){
+function MinesPanel({
+// Stake-style payout calculation with 1% house edge
+function calcPayout(safeClicks, baseBet, minesCount) {
+  const totalTiles = rows * cols;
+  const safeTiles = totalTiles - minesCount;
+  if (safeClicks <= 0) return 0;
+  let numerator = 1;
+  let denominator = 1;
+  for (let i = 0; i < safeClicks; i++) {
+    numerator *= (safeTiles - i);
+    denominator *= (totalTiles - i);
+  }
+  const fairMultiplier = (numerator / denominator) * (totalTiles / safeTiles);
+  const multiplier = fairMultiplier * 0.99; // 1% house edge
+  return parseFloat((baseBet * multiplier).toFixed(2));
+}
+balance, setBalance, pushResult, globalLock, setGlobalLock}){
   const rows = 5, cols = 5, total = rows * cols
   const [mines, setMines] = useState(3)
   const [stake, setStake] = useState(10)
@@ -319,23 +335,7 @@ function MinesPanel({balance, setBalance, pushResult, globalLock, setGlobalLock}
     }
   }
 
-  
-// Stake-style payout calculation (safe, deterministic)
-function calcPayout(safeClicks, baseBet, minesCount){
-  const totalTiles = rows * cols;
-  const safeTiles = totalTiles - minesCount;
-  if (safeClicks <= 0) return 0;
-  // multiplier = (product_{i=0..k-1} (safeTiles - i)/(totalTiles - i)) * (totalTiles / safeTiles)
-  let numerator = 1;
-  let denominator = 1;
-  for (let i = 0; i < safeClicks; i++) {
-    numerator *= (safeTiles - i);
-    denominator *= (totalTiles - i);
-  }
-  const multiplier = (numerator / denominator) * (totalTiles / safeTiles);
-  return parseFloat((baseBet * multiplier).toFixed(2));
-}
-return (
+  return (
     <div style={{display:'flex',flexDirection:'column',gap:12}}>
       <div style={{display:'flex',gap:12,alignItems:'center'}}>
         <div style={{display:'flex',flexDirection:'column'}}>

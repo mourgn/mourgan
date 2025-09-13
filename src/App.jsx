@@ -106,6 +106,7 @@ export default function App(){
 }
 
 /* ================= CrashPanel ================= */
+
 function CrashPanel({balance, setBalance, pushResult, globalLock, setGlobalLock}){
   const [bet, setBet] = useState(10)
   const [isRunning, setIsRunning] = useState(false)
@@ -114,6 +115,7 @@ function CrashPanel({balance, setBalance, pushResult, globalLock, setGlobalLock}
   const rafRef = useRef(null)
   const lastRef = useRef(null)
   const multiplierRef = useRef(1.00)
+  const cashedRef = useRef(null) // synchronous flag to avoid race between cashout and bust
   const [target, setTarget] = useState(2.0)
   const baseSpeedRef = useRef(0.7) // tuning value
   const accel = 1.6 // exponent for speed growth
@@ -122,18 +124,12 @@ function CrashPanel({balance, setBalance, pushResult, globalLock, setGlobalLock}
     return ()=>{ if(rafRef.current) cancelAnimationFrame(rafRef.current) }
   },[])
 
-  function computeTargetFromSeed(){
-    // generate a random-ish crash point using Math.random ()
-    const r = Math.random()
-    const val = 1 + Math.pow(1 - r, -1.1) * 0.6
-    return Math.round(Math.max(1.01, val) * 100) / 100
-  }
-
   function start(){
     if (isRunning || bet <= 0) return
     if (bet > balance){ alert('Insufficient balance'); return }
     // deduct bet immediately
     setBalance(b => Math.round((b - bet)*100)/100)
+    cashedRef.current = null
     setCashedAt(null)
     setIsRunning(true)
     setMultiplier(1.00)
@@ -161,8 +157,8 @@ function CrashPanel({balance, setBalance, pushResult, globalLock, setGlobalLock}
       // bust event
       setIsRunning(false)
       setGlobalLock(false)
-      // if player didn't cash out, they lose (bet already deducted)
-      if (cashedAt === null){
+      // if player didn't cash out (synchronous check), they lose (bet already deducted)
+      if (cashedRef.current === null){
         const record = { game: 'Crash', bet: bet, payout: 0, profit: -bet, time: Date.now() }
         pushResult(record)
       }
@@ -177,14 +173,26 @@ function CrashPanel({balance, setBalance, pushResult, globalLock, setGlobalLock}
   }
 
   function doCashout(){
-    if (!isRunning || cashedAt !== null) return
+    if (!isRunning || cashedRef.current !== null) return
     const m = multiplierRef.current || multiplier
-    const payout = Math.round(bet * m * 100) / 100
+    // IMPORTANT: UI displays (multiplier - 1) as the "shown" multiplier.
+    // We want payout = bet * shownMultiplier (not bet * m which is 1 + shownMultiplier).
+    const shown = Math.round((m - 1) * 100) / 100
+    const payout = Math.round(bet * shown * 100) / 100
     const profit = Math.round((payout - bet) * 100) / 100
-    setBalance(b => Math.round((b + payout) * 100) / 100)
+    // mark cashed synchronously to avoid race with tick/bust
+    cashedRef.current = m
     setCashedAt(m)
+    // add only the payout (since bet was already deducted at start)
+    setBalance(b => Math.round((b + payout) * 100) / 100)
     // record result now (user explicitly cashed out)
     pushResult({ game: 'Crash', bet: bet, payout: payout, profit: profit, time: Date.now() })
+    // stop the run and unlock immediately to avoid any double-recording
+    setIsRunning(false)
+    setGlobalLock(false)
+    if (rafRef.current) cancelAnimationFrame(rafRef.current)
+    rafRef.current = null
+    lastRef.current = null
   }
 
   return (
@@ -192,13 +200,14 @@ function CrashPanel({balance, setBalance, pushResult, globalLock, setGlobalLock}
       <div style={{display:'flex',gap:12,alignItems:'center'}}>
         <div style={{display:'flex',flexDirection:'column'}}>
           <label className="small">Bet</label>
-          <input className="input" type="number" value={bet} onChange={e=>setBet(Number(e.target.value)||0)} />
+          <input className="input" type="number" value={bet} onChange={e=>setBet(Number(e.target.value))} />
         </div>
-        <div style={{marginLeft:'auto'}} className="small">Target (hidden)</div>
-        <div>
+        <div style={{display:'flex',flexDirection:'column'}}>
+          <label className="small">Target (bust at)</label>
+          <input className="input" type="number" value={target} onChange={e=>setTarget(Number(e.target.value))} />
+        </div>
+        <div style={{display:'flex',gap:8,marginLeft:'auto'}}>
           <button className="btn primary" onClick={start} disabled={isRunning || globalLock}>Start</button>
-        </div>
-        <div>
           <button className="btn ghost" onClick={doCashout} disabled={!isRunning || cashedAt!==null}>Cash Out</button>
         </div>
       </div>
@@ -206,13 +215,12 @@ function CrashPanel({balance, setBalance, pushResult, globalLock, setGlobalLock}
       <div style={{display:'flex',alignItems:'center',justifyContent:'center',height:220}} className="panel">
         <div style={{textAlign:'center'}}>
           <div style={{fontSize:56,fontWeight:900}}>{(multiplier - 1).toFixed(3)}x</div>
-          <div className="small" style={{marginTop:8}}>{isRunning ? 'RUNNING' : cashedAt ? `Cashed at ${(cashedAt - 1).toFixed(3)}x` : 'READY'}</div>
+          <div className="small" style={{marginTop:8}}>{isRunning ? (cashedAt ? `Cashed at ${(cashedAt - 1).toFixed(3)}x` : 'RUNNING') : (cashedAt ? `Cashed at ${(cashedAt - 1).toFixed(3)}x` : 'READY')}</div>
         </div>
       </div>
     </div>
   )
 }
-
 /* ================= MinesPanel ================= */
 function MinesPanel({balance, setBalance, pushResult, globalLock, setGlobalLock}){
   const rows = 5, cols = 5, total = rows * cols

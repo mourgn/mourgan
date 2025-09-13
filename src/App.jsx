@@ -122,12 +122,12 @@ function CrashPanel({balance, setBalance, pushResult, globalLock, setGlobalLock}
     return ()=>{ if(rafRef.current) cancelAnimationFrame(rafRef.current) }
   },[])
 
-  function computeTargetFromSeed(){
-    // generate a random-ish crash point using Math.random ()
-    const r = Math.random()
-    const val = 1 + Math.pow(1 - r, -1.1) * 0.6
-    return Math.round(Math.max(1.01, val) * 100) / 100
-  }
+  function computeTargetFromSeed() {
+  const r = Math.random();
+  if (r < 0.65) return +(Math.random() * 0.9).toFixed(2);      // 65% chance bust <1.0x
+  if (r < 0.90) return +(1 + Math.random() * 1.5).toFixed(2);  // 25% chance 1.0–2.5x
+  return +(2.5 + Math.random() * 5).toFixed(2);                // 10% chance 2.5–7.5x
+}
 
   function start(){
     if (isRunning || bet <= 0) return
@@ -158,6 +158,16 @@ function CrashPanel({balance, setBalance, pushResult, globalLock, setGlobalLock}
 
     // bust check
     if (multiplierRef.current >= target){
+      setIsRunning(false)
+      setGlobalLock(false)
+      if (cashedRef.current === null) {
+        pushResult({ game: 'Crash', bet: bet, payout: 0, profit: -bet, time: Date.now() })
+      }
+      if (rafRef.current) cancelAnimationFrame(rafRef.current)
+      rafRef.current = null
+      lastRef.current = null
+      return
+    
       // bust event
       setIsRunning(false)
       setGlobalLock(false)

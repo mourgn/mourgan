@@ -317,7 +317,7 @@ function MinesPanel({balance, setBalance, pushResult, globalLock, setGlobalLock}
       </div>
 
       <div className="small" style={{marginBottom:8}}>
-        Potential payout: <strong>{live.payout.toFixed(2)} ({(multiplier - 1).toFixed(3)}x)</strong> — Potential profit: <strong style={{color: live.profit>=0? 'var(--win)': 'var(--loss)'}}>{live.profit>=0?`+${live.profit.toFixed(2)}`:live.profit.toFixed(2)}</strong>
+        Potential profit: <strong>{live.profit.toFixed(2)} ({(Math.max(0, multiplier - 1)).toFixed(3)}x)</strong>
       </div>
 
       <div className="grid mines" role="grid">

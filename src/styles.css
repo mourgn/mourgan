@@ -28,8 +28,8 @@ body{margin:0;background:linear-gradient(180deg,var(--bg),#050310);font-family:I
 .recent-item.win{color:var(--win)}
 .recent-item.loss{color:var(--loss)}
 .grid{display:grid;gap:10px}
-.grid.mines { display: grid; grid-template-columns: repeat(5, minmax(120px, 1fr)); gap: 12px; justify-content: center; margin: 0 auto; }
-.tile { width: 100%; aspect-ratio: 1 / 1; border-radius: 12px; border: 1px solid rgba(255,255,255,0.02); display: flex; align-items: center; justify-content: center; font-weight: 800; background: rgba(255,255,255,0.02); cursor: pointer; font-size: 1.8rem; }
+.grid.mines { display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px; max-width: 700px; margin: 0 auto; }
+.tile { aspect-ratio: 1 / 1; width: 100%; border-radius: 12px; border: 1px solid rgba(255,255,255,0.05); display: flex; align-items: center; justify-content: center; font-weight: 800; background: rgba(255,255,255,0.05); cursor: pointer; font-size: 1.6rem; }
 .tile.safe{background:rgba(16,185,129,0.15);color:var(--win)}
 .tile.mine{background:rgba(239,68,68,0.15);color:var(--loss)}
   .recent-list{margin-top:12px;flex:1;overflow:auto;display:flex;flex-direction:column;}

@@ -236,21 +236,6 @@ function MinesPanel({balance, setBalance, pushResult, globalLock, setGlobalLock}
   const [mines, setMines] = useState(3)
   const [stake, setStake] = useState(10)
   const [revealed, setRevealed] = useState({})
-
-  // Stake-style payout calculation with ~1% house edge
-  function calcPayout(safeClicks, baseBet, minesCount) {
-    const totalTiles = rows * cols;
-    const safeTiles = totalTiles - minesCount;
-    let multiplier = 1;
-
-    for (let i = 0; i < safeClicks; i++) {
-      multiplier *= (safeTiles - i) / (totalTiles - i);
-    }
-
-    // Invert probability for fair odds, then apply house edge
-    const payout = (1 / multiplier) * (1 - 0.01);
-    return baseBet * payout;
-  }
   const [minePositions, setMinePositions] = useState([])
   const [phase, setPhase] = useState('idle') // idle | playing | cashed | lost
   const [lastPayout, setLastPayout] = useState(null)
@@ -293,27 +278,34 @@ function MinesPanel({balance, setBalance, pushResult, globalLock, setGlobalLock}
     }
   }
 
-  function computeMultiplier(safeRevealed){
-    // dynamic multiplier: lower profit for small mine counts
-    const safeTotal = total - mines
-    const mineFactor = 0.18 + (mines / total) * 1.1
-    const perSafe = 0.28 * mineFactor
-    const base = 1 + safeRevealed * perSafe * (safeTotal / Math.max(1, safeTotal))
-    const multiplier = Math.max(0, base * (1 - 0.06))
-    return multiplier
-  }
+  
+// Stake-style payout calculation with 1% house edge
+function calcPayout(safeRevealed, baseBet, minesCount){
+  const totalTiles = rows * cols;
+  const safeTiles = totalTiles - minesCount;
+  if (safeRevealed <= 0) return { multiplier: 0, payout: 0, profit: 0 };
 
-  function computeLive(){
-    const revealedCount = Object.keys(revealed).length
-    const revealedMines = minePositions.filter(i => revealed[i]).length
-    const safeRevealed = Math.max(0, revealedCount - revealedMines)
-    const multiplier = computeMultiplier(safeRevealed)
-    const payout = Math.round(stake * multiplier * 100) / 100
-    const profit = Math.round((payout - stake) * 100) / 100
-    return { safeRevealed, multiplier, payout, profit }
+  const HOUSE_EDGE = 0.99;
+  let mult = 1;
+  for (let i = 0; i < safeRevealed; i++){
+    // multiply the reciprocal odds factor to grow payout
+    mult *= (totalTiles - i) / (safeTiles - i);
   }
+  mult = mult * HOUSE_EDGE;
+  const payout = Math.round(baseBet * mult * 100) / 100;
+  const profit = Math.round((payout - baseBet) * 100) / 100;
+  return { multiplier: mult, payout, profit };
+}
 
-  const live = computeLive()
+function computeLive(){
+  const revealedCount = Object.keys(revealed).length;
+  const revealedMines = minePositions.filter(i => revealed[i]).length;
+  const safeRevealed = Math.max(0, revealedCount - revealedMines);
+  const { multiplier, payout, profit } = calcPayout(safeRevealed, stake, mines);
+  return { safeRevealed, multiplier, payout, profit };
+}
+
+const live = computeLive()
 
   function primaryAction(){
     if (phase === 'idle') { startRound(); return }

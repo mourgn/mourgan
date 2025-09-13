@@ -196,11 +196,21 @@ function CrashPanel({balance, setBalance, pushResult, globalLock, setGlobalLock}
         </div>
         <div style={{marginLeft:'auto'}} className="small">Target (hidden)</div>
         <div>
-          <div style={{display:"flex", justifyContent:"center", marginTop:12}}>
-            <button className="btn primary" onClick={start} disabled={isRunning || globalLock} style={{minWidth:260}}>
-              Start
+          
+          <div style={{display:'flex', justifyContent:'center', marginTop:12}}>
+            <button
+              className="btn primary"
+              onClick={() => {
+                if (phase === 'idle') startGame();
+                else if (phase === 'playing') cashOut();
+                else resetGame();
+              }}
+              style={{minWidth:260}}
+            >
+              {phase==='idle' ? 'Start' : phase==='playing' ? 'Cash Out' : 'New Game'}
             </button>
           </div>
+
         </div>
         <div>
           <button className="btn ghost" onClick={doCashout} disabled={!isRunning || cashedAt!==null}>Cash Out</button>
@@ -324,7 +334,7 @@ function MinesPanel({balance, setBalance, pushResult, globalLock, setGlobalLock}
         Potential payout: <strong>{live.payout.toFixed(2)} ({live.multiplier.toFixed(2)}x)</strong> — Potential profit: <strong style={{color: live.profit>=0? 'var(--win)': 'var(--loss)'}}>{live.profit>=0?`+${live.profit.toFixed(2)}`:live.profit.toFixed(2)}</strong>
       </div>
 
-      <div className="grid mines" role="grid" style={{ width: "100%", maxWidth: "700px" }}>
+      <div className="grid grid-cols-5 gap-3 w-full max-w-[700px] mx-auto" role="grid">
         {Array.from({length: total}).map((_, idx)=>{
           const isRevealed = !!revealed[idx]
           const isMine = minePositions.includes(idx)

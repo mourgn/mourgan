@@ -231,6 +231,44 @@ function CrashPanel({balance, setBalance, pushResult, globalLock, setGlobalLock}
 }
 
 /* ================= MinesPanel ================= */
+function calcPayout(safeRevealed, baseBet, minesCount) {
+  const totalTiles = rows * cols;
+  const safeTiles = totalTiles - minesCount;
+
+  if (safeRevealed === 0) {
+    return { multiplier: "1.00", payout: baseBet, profit: 0 };
+  }
+
+  // Raw probability-based fair multiplier
+  let fair = 1;
+  for (let i = 0; i < safeRevealed; i++) {
+    fair *= (safeTiles - i) / (totalTiles - i);
+  }
+  fair = 1 / fair;
+
+  // House edge
+  fair *= 0.985;
+
+  let multiplier;
+
+  // Explicit scaling for first few picks
+  if (safeRevealed === 1) {
+    multiplier = 0.65;
+  } else if (safeRevealed === 2) {
+    multiplier = 0.9;
+  } else if (safeRevealed === 3) {
+    multiplier = 1.1;
+  } else {
+    const scaling = 1 + ((safeTiles / totalTiles) * 0.5); 
+    multiplier = fair * scaling;
+  }
+
+  const payout = parseFloat((baseBet * multiplier).toFixed(2));
+  const profit = parseFloat((payout - baseBet).toFixed(2));
+
+  return { multiplier: multiplier.toFixed(2), payout, profit };
+}
+
 function MinesPanel({balance, setBalance, pushResult, globalLock, setGlobalLock}){
   const rows = 5, cols = 5, total = rows * cols
   const [mines, setMines] = useState(3)

@@ -114,41 +114,23 @@ header {
   color: #f1f1f1;
 }
 
+/* Injected autoscroll CSS */
 
-/* Hide scrollbar instantly */
-.recent-winnings::-webkit-scrollbar {
-  display: none;
-}
-.recent-winnings {
-  -ms-overflow-style: none;
+/* Autoscroll / recent winnings styling */
+.recent-list, .recent-winnings, .recent-container {
+  overflow-y: auto;
   scrollbar-width: none;
+  -ms-overflow-style: none;
   scroll-behavior: smooth;
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
+  padding-bottom: 12px;
 }
-
-/* New entry animation */
-.recent-entry {
-  opacity: 0;
-  transform: translateY(10px) scale(0.95);
-  animation: entryFade 0.8s ease forwards;
-}
-.recent-entry.win {
-  box-shadow: 0 0 12px rgba(0, 255, 0, 0.35);
-}
-.recent-entry.loss {
-  box-shadow: 0 0 12px rgba(255, 0, 0, 0.35);
-}
-
-@keyframes entryFade {
-  0% {
-    opacity: 0;
-    transform: translateY(10px) scale(0.95);
-  }
-  60% {
-    opacity: 1;
-    transform: translateY(-2px) scale(1.02);
-  }
-  100% {
-    opacity: 1;
-    transform: translateY(0) scale(1);
-  }
+.recent-list::-webkit-scrollbar, 
+.recent-winnings::-webkit-scrollbar,
+.recent-container::-webkit-scrollbar {
+  width: 0;
+  height: 0;
+  display: none;
 }

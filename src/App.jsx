@@ -66,6 +66,7 @@ export default function App(){
         </div>
         <div style={{display:'flex',flexDirection:'column',gap:8}}>
           <button className={'nav-btn ' + (view==='crash' ? 'active' : '')} onClick={()=>setView('crash')}>Crash</button>
+      </div>
           <button className={'nav-btn ' + (view==='mines' ? 'active' : '')} onClick={()=>setView('mines')}>Mines</button>
           <button className={'nav-btn ' + (view==='history' ? 'active' : '')} onClick={()=>setView('history')}>History</button>
         </div>
@@ -367,6 +368,7 @@ function MinesPanel({balance, setBalance, pushResult, globalLock, setGlobalLock}
       </div>
 
             <div style={{display:'flex',gap:12,alignItems:'center'}}>
+        <div className="mt-4 flex justify-center">
         <button className={'btn primary'} onClick={primaryAction}>{phase==='idle'?'Start': phase==='playing'?'Cash Out':'New Game'}</button>
         <div className="small">Note: Balance deducted when Start pressed. Cash Out to collect winnings.</div>
       </div>

@@ -231,27 +231,26 @@ function CrashPanel({balance, setBalance, pushResult, globalLock, setGlobalLock}
 }
 
 /* ================= MinesPanel ================= */
-function MinesPanel({
-// Stake-style payout calculation with 1% house edge
-function calcPayout(safeClicks, baseBet, minesCount) {
-  const totalTiles = rows * cols;
-  const safeTiles = totalTiles - minesCount;
-  if (safeClicks <= 0) return 0;
-  let numerator = 1;
-  let denominator = 1;
-  for (let i = 0; i < safeClicks; i++) {
-    numerator *= (safeTiles - i);
-    denominator *= (totalTiles - i);
-  }
-  const fairMultiplier = (numerator / denominator) * (totalTiles / safeTiles);
-  const multiplier = fairMultiplier * 0.99; // 1% house edge
-  return parseFloat((baseBet * multiplier).toFixed(2));
-}
-balance, setBalance, pushResult, globalLock, setGlobalLock}){
+function MinesPanel({balance, setBalance, pushResult, globalLock, setGlobalLock}){
   const rows = 5, cols = 5, total = rows * cols
   const [mines, setMines] = useState(3)
   const [stake, setStake] = useState(10)
   const [revealed, setRevealed] = useState({})
+
+  // Stake-style payout calculation with ~1% house edge
+  function calcPayout(safeClicks, baseBet, minesCount) {
+    const totalTiles = rows * cols;
+    const safeTiles = totalTiles - minesCount;
+    let multiplier = 1;
+
+    for (let i = 0; i < safeClicks; i++) {
+      multiplier *= (safeTiles - i) / (totalTiles - i);
+    }
+
+    // Invert probability for fair odds, then apply house edge
+    const payout = (1 / multiplier) * (1 - 0.01);
+    return baseBet * payout;
+  }
   const [minePositions, setMinePositions] = useState([])
   const [phase, setPhase] = useState('idle') // idle | playing | cashed | lost
   const [lastPayout, setLastPayout] = useState(null)

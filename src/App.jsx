@@ -114,6 +114,7 @@ function CrashPanel({balance, setBalance, pushResult, globalLock, setGlobalLock}
   const rafRef = useRef(null)
   const lastRef = useRef(null)
   const multiplierRef = useRef(0.00)
+  const cashedRef = useRef(null)
   const [target, setTarget] = useState(2.0)
   const baseSpeedRef = useRef(0.7) // tuning value
   const accel = 1.6 // exponent for speed growth
@@ -134,6 +135,7 @@ function CrashPanel({balance, setBalance, pushResult, globalLock, setGlobalLock}
     if (bet > balance){ alert('Insufficient balance'); return }
     // deduct bet immediately
     setBalance(b => Math.round((b - bet)*100)/100)
+    cashedRef.current = null
     setCashedAt(null)
     setIsRunning(true)
     setMultiplier(0.00)
@@ -193,8 +195,13 @@ function CrashPanel({balance, setBalance, pushResult, globalLock, setGlobalLock}
     const profit = Math.round((payout - bet) * 100) / 100
     setBalance(b => Math.round((b + payout) * 100) / 100)
     setCashedAt(m)
+    cashedRef.current = m
     // record result now (user explicitly cashed out)
     pushResult({ game: 'Crash', bet: bet, payout: payout, profit: profit, time: Date.now() })
+    if (rafRef.current) cancelAnimationFrame(rafRef.current)
+    rafRef.current = null
+    setIsRunning(false)
+    setGlobalLock(false)
   }
 
   return (

@@ -106,85 +106,72 @@ export default function App(){
 }
 
 /* ================= CrashPanel ================= */
+
+
+
+
 function CrashPanel({balance, setBalance, pushResult, globalLock, setGlobalLock}){
   const [bet, setBet] = useState(10)
   const [isRunning, setIsRunning] = useState(false)
-  const [multiplier, setMultiplier] = useState(1.00)
+  const [multiplier, setMultiplier] = useState(0.000) // starts at 0
   const [cashedAt, setCashedAt] = useState(null)
   const rafRef = useRef(null)
-  const lastRef = useRef(null)
-  const multiplierRef = useRef(1.00)
+  const startTimeRef = useRef(null)
+  const cashedRef = useRef(null)
   const [target, setTarget] = useState(2.0)
-  const baseSpeedRef = useRef(0.7) // tuning value
-  const accel = 1.6 // exponent for speed growth
+  const growthRate = 1.15 // exponential base
 
   useEffect(()=>{
     return ()=>{ if(rafRef.current) cancelAnimationFrame(rafRef.current) }
   },[])
 
-  function computeTargetFromSeed(){
-    // generate a random-ish crash point using Math.random ()
-    const r = Math.random()
-    const val = 1 + Math.pow(1 - r, -1.1) * 0.6
-    return Math.round(Math.max(1.01, val) * 100) / 100
-  }
-
   function start(){
     if (isRunning || bet <= 0) return
     if (bet > balance){ alert('Insufficient balance'); return }
-    // deduct bet immediately
     setBalance(b => Math.round((b - bet)*100)/100)
+    cashedRef.current = null
     setCashedAt(null)
     setIsRunning(true)
-    setMultiplier(1.00)
-    multiplierRef.current = 1.00
-    lastRef.current = null
+    setMultiplier(0.000)
+    startTimeRef.current = performance.now()
     const t = computeTargetFromSeed()
     setTarget(t)
-    // start RAF
     rafRef.current = requestAnimationFrame(tick)
     setGlobalLock(true)
   }
 
   function tick(ts){
-    if (!lastRef.current) lastRef.current = ts
-    const dt = (ts - lastRef.current) / 1000
-    lastRef.current = ts
-    // speed grows as multiplier grows (not based on target)
-    const speed = baseSpeedRef.current * Math.pow(Math.max(1, multiplierRef.current), accel - 1)
-    const next = multiplierRef.current + dt * speed
-    multiplierRef.current = Math.round(next * 100) / 100
-    setMultiplier(multiplierRef.current)
+    const elapsed = (ts - startTimeRef.current) / 1000
+    const value = Math.pow(growthRate, elapsed) - 1
+    const shown = value < 1 ? Math.round(value * 1000) / 1000 : Math.round(value * 100) / 100
+    setMultiplier(shown)
 
-    // bust check
-    if (multiplierRef.current >= target){
-      // bust event
+    if (value >= target){
       setIsRunning(false)
       setGlobalLock(false)
-      // if player didn't cash out, they lose (bet already deducted)
-      if (cashedAt === null){
-        const record = { game: 'Crash', bet: bet, payout: 0, profit: -bet, time: Date.now() }
-        pushResult(record)
+      if (cashedRef.current === null){
+        pushResult({ game: 'Crash', bet: bet, payout: 0, profit: -bet, time: Date.now() })
       }
-      // stop RAF and reset
       if (rafRef.current) cancelAnimationFrame(rafRef.current)
       rafRef.current = null
-      lastRef.current = null
       return
     }
-    // continue
     rafRef.current = requestAnimationFrame(tick)
   }
 
   function doCashout(){
-    if (!isRunning || cashedAt !== null) return
-    const m = multiplierRef.current || multiplier
+    if (!isRunning || cashedRef.current !== null) return
+    const m = multiplier
     const payout = Math.round(bet * m * 100) / 100
     const profit = Math.round((payout - bet) * 100) / 100
-    setBalance(b => Math.round((b + payout) * 100) / 100)
+    cashedRef.current = m
     setCashedAt(m)
-    // record result now (user explicitly cashed out)
+    setBalance(b => Math.round((b + payout) * 100) / 100)
     pushResult({ game: 'Crash', bet: bet, payout: payout, profit: profit, time: Date.now() })
+    setIsRunning(false)
+    setGlobalLock(false)
+    if (rafRef.current) cancelAnimationFrame(rafRef.current)
+    rafRef.current = null
   }
 
   return (
@@ -192,41 +179,27 @@ function CrashPanel({balance, setBalance, pushResult, globalLock, setGlobalLock}
       <div style={{display:'flex',gap:12,alignItems:'center'}}>
         <div style={{display:'flex',flexDirection:'column'}}>
           <label className="small">Bet</label>
-          <input className="input" type="number" value={bet} onChange={e=>setBet(Number(e.target.value)||0)} />
+          <input className="input" type="number" value={bet} onChange={e=>setBet(Number(e.target.value))} />
         </div>
-        <div style={{marginLeft:'auto'}} className="small">Target (hidden)</div>
-        <div>
-          
-          <div style={{display:'flex', justifyContent:'center', marginTop:12}}>
-            <button
-              className="btn primary"
-              onClick={() => {
-                if (phase === 'idle') startGame();
-                else if (phase === 'playing') cashOut();
-                else resetGame();
-              }}
-              style={{minWidth:260}}
-            >
-              {phase==='idle' ? 'Start' : phase==='playing' ? 'Cash Out' : 'New Game'}
-            </button>
-          </div>
-
+        <div style={{display:'flex',flexDirection:'column'}}>
+          <label className="small">Target (bust at)</label>
+          <input className="input" type="number" value={target} onChange={e=>setTarget(Number(e.target.value))} />
         </div>
-        <div>
+        <div style={{display:'flex',gap:8,marginLeft:'auto'}}>
+          <button className="btn primary" onClick={start} disabled={isRunning || globalLock}>Start</button>
           <button className="btn ghost" onClick={doCashout} disabled={!isRunning || cashedAt!==null}>Cash Out</button>
         </div>
       </div>
 
       <div style={{display:'flex',alignItems:'center',justifyContent:'center',height:220}} className="panel">
         <div style={{textAlign:'center'}}>
-          <div style={{fontSize:56,fontWeight:900}}>{multiplier.toFixed(2)}x</div>
-          <div className="small" style={{marginTop:8}}>{isRunning ? 'RUNNING' : cashedAt ? `Cashed at ${cashedAt}x` : 'READY'}</div>
+          <div style={{fontSize:56,fontWeight:900}}>{multiplier.toFixed(3)}x</div>
+          <div className="small" style={{marginTop:8}}>{isRunning ? (cashedAt ? `Cashed at ${cashedAt.toFixed(3)}x` : 'RUNNING') : (cashedAt ? `Cashed at ${cashedAt.toFixed(3)}x` : 'READY')}</div>
         </div>
       </div>
     </div>
   )
 }
-
 /* ================= MinesPanel ================= */
 function MinesPanel({balance, setBalance, pushResult, globalLock, setGlobalLock}){
   const rows = 5, cols = 5, total = rows * cols
@@ -331,22 +304,14 @@ function MinesPanel({balance, setBalance, pushResult, globalLock, setGlobalLock}
       </div>
 
       <div className="small" style={{marginBottom:8}}>
-        Potential payout: <strong>{live.payout.toFixed(2)} ({live.multiplier.toFixed(2)}x)</strong> — Potential profit: <strong style={{color: live.profit>=0? 'var(--win)': 'var(--loss)'}}>{live.profit>=0?`+${live.profit.toFixed(2)}`:live.profit.toFixed(2)}</strong>
+        Potential profit: <strong>{live.profit.toFixed(2)} ({(Math.max(0, multiplier - 1)).toFixed(3)}x)</strong>
       </div>
 
-      <div className="grid mines" role="grid" style={{ width: "100%", maxWidth: "700px", margin: "0 auto" }}>
+      <div className="grid mines" role="grid">
         {Array.from({length: total}).map((_, idx)=>{
           const isRevealed = !!revealed[idx]
           const isMine = minePositions.includes(idx)
-          return (
-            <button
-              key={idx}
-              onClick={() => clickTile(idx)}
-              disabled={phase !== 'playing' || !!revealed[idx]}
-              className="tile aspect-square w-full rounded-xl"
-            >
-              {revealed[idx] ? (minePositions.includes(idx) ? '💣' : '✓') : ''}
-            </button>)
+          return <button key={idx} onClick={()=>clickTile(idx)} disabled={phase!=='playing'} className={'tile ' + (isRevealed ? (isMine ? 'mine' : 'safe') : '')}>{isRevealed ? (isMine ? '💣' : '✓') : ''}</button>
         })}
       </div>
 

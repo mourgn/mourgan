@@ -121,20 +121,18 @@ function CrashPanel({balance, setBalance, pushResult, globalLock, setGlobalLock}
 
   useEffect(()=>{
     
-function primaryAction(){
+function crashPrimaryAction(){
   // Single button: Start -> Cash Out -> New Game
   if (!isRunning && cashedAt === null){
-    // idle -> start
     start()
     return
   }
   if (isRunning && cashedAt === null){
-    // running -> cash out
     doCashout()
     return
   }
   if (!isRunning && cashedAt !== null){
-    // ended & cashed -> reset for new round
+    // reset for new round
     setCashedAt(null)
     setMultiplier(0.00)
     multiplierRef.current = 0.00
@@ -157,6 +155,7 @@ return ()=>{ if(rafRef.current) cancelAnimationFrame(rafRef.current) }
     return Math.round((3 + Math.random() * 7) * 100) / 100
   }
 }
+
 
   function start(){
     if (isRunning || bet <= 0) return
@@ -224,9 +223,8 @@ return ()=>{ if(rafRef.current) cancelAnimationFrame(rafRef.current) }
           <input className="input" type="number" value={bet} onChange={e=>setBet(Number(e.target.value)||0)} />
         </div>
         <div style={{marginLeft:'auto'}} className="small">Target (hidden)</div>
-        <div>
-          <div>
-          <button className={'btn primary'} onClick={primaryAction}>{!isRunning && cashedAt===null ? 'Start' : (isRunning ? 'Cash Out' : 'New Game')}</button>
+        <div style={{display:'flex',gap:8,marginLeft:'auto'}}>
+          <button className={'btn primary'} onClick={crashPrimaryAction}>{!isRunning && cashedAt===null ? 'Start' : (isRunning ? 'Cash Out' : 'New Game')}</button>
         </div>
       </div>
 
@@ -240,7 +238,7 @@ return ()=>{ if(rafRef.current) cancelAnimationFrame(rafRef.current) }
   )
 }
 
-  /* ================= MinesPanel ================= */
+/* ================= MinesPanel ================= */
 function MinesPanel({balance, setBalance, pushResult, globalLock, setGlobalLock}){
   const rows = 5, cols = 5, total = rows * cols
   const [mines, setMines] = useState(3)

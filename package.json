@@ -1,5 +1,5 @@
 {
-  "name": "mourgan-patch",
+  "name": "casino-polished-v6-fixed",
   "version": "1.0.0",
   "private": true,
   "scripts": {
@@ -12,7 +12,6 @@
     "react-dom": "^18.2.0"
   },
   "devDependencies": {
-    "vite": "^4.5.0",
-    "@vitejs/plugin-react": "^4.0.0"
+    "vite": "^4.3.9"
   }
 }

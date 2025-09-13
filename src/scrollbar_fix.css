@@ -1,0 +1,17 @@
+
+/* scrollbar_fix.css - hide scrollbars for recent winnings and history lists instantly */
+
+/* Target likely containers */
+.recent-winnings, .recent-list, .recent-container, .recent-pane,
+.history, .history-list, .history-container, .history-pane, .records, .recent-items {
+  overflow-y: auto !important;
+  -ms-overflow-style: none !important;  /* IE 10+ */
+  scrollbar-width: none !important;  /* Firefox */
+  scroll-behavior: smooth !important;
+}
+.recent-winnings::-webkit-scrollbar, .recent-list::-webkit-scrollbar, .history-list::-webkit-scrollbar, .history::-webkit-scrollbar {
+  display: none !important;
+  width: 0 !important;
+  height: 0 !important;
+}
+/* keep content accessible but visually hide scrollbars */

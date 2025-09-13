@@ -113,24 +113,3 @@ header {
   -webkit-backdrop-filter: blur(12px);
   color: #f1f1f1;
 }
-
-/* Injected autoscroll CSS */
-
-/* Autoscroll / recent winnings styling */
-.recent-list, .recent-winnings, .recent-container {
-  overflow-y: auto;
-  scrollbar-width: none;
-  -ms-overflow-style: none;
-  scroll-behavior: smooth;
-  display: flex;
-  flex-direction: column;
-  flex: 1 1 auto;
-  padding-bottom: 12px;
-}
-.recent-list::-webkit-scrollbar, 
-.recent-winnings::-webkit-scrollbar,
-.recent-container::-webkit-scrollbar {
-  width: 0;
-  height: 0;
-  display: none;
-}

@@ -126,7 +126,7 @@ function CrashPanel({balance, setBalance, pushResult, globalLock, setGlobalLock}
     // generate a random-ish crash point using Math.random ()
     const r = Math.random()
     const val = 1 + Math.pow(1 - r, -1.1) * 0.6
-    return Math.round(Math.max(1.01, val) * 100) / 100
+    return Math.round(Math.max(1.01, val) * 1000) / 1000
   }
 
   function start(){
@@ -153,7 +153,7 @@ function CrashPanel({balance, setBalance, pushResult, globalLock, setGlobalLock}
     // speed grows as multiplier grows (not based on target)
     const speed = baseSpeedRef.current * Math.pow(Math.max(1, multiplierRef.current), accel - 1)
     const next = multiplierRef.current + dt * speed
-    multiplierRef.current = Math.round(next * 100) / 100
+    multiplierRef.current = Math.round(next * 1000) / 1000
     setMultiplier(multiplierRef.current)
 
     // bust check
@@ -205,8 +205,8 @@ function CrashPanel({balance, setBalance, pushResult, globalLock, setGlobalLock}
 
       <div style={{display:'flex',alignItems:'center',justifyContent:'center',height:220}} className="panel">
         <div style={{textAlign:'center'}}>
-          <div style={{fontSize:56,fontWeight:900}}>{multiplier.toFixed(2)}x</div>
-          <div className="small" style={{marginTop:8}}>{isRunning ? 'RUNNING' : cashedAt ? `Cashed at ${cashedAt}x` : 'READY'}</div>
+          <div style={{fontSize:56,fontWeight:900}}>{(Math.max(0, multiplier - 1)).toFixed(3)}x</div>
+          <div className="small" style={{marginTop:8}}>{isRunning ? 'RUNNING' : cashedAt ? `Cashed at ${Math.max(0, (cashedAt - 1)).toFixed(3)}x` : 'READY'}</div>
         </div>
       </div>
     </div>
@@ -317,7 +317,7 @@ function MinesPanel({balance, setBalance, pushResult, globalLock, setGlobalLock}
       </div>
 
       <div className="small" style={{marginBottom:8}}>
-        Potential payout: <strong>{live.payout.toFixed(2)} ({live.multiplier.toFixed(2)}x)</strong> — Potential profit: <strong style={{color: live.profit>=0? 'var(--win)': 'var(--loss)'}}>{live.profit>=0?`+${live.profit.toFixed(2)}`:live.profit.toFixed(2)}</strong>
+        Potential payout: <strong>{live.payout.toFixed(2)} ({live.(Math.max(0, multiplier - 1)).toFixed(3)}x)</strong> — Potential profit: <strong style={{color: live.profit>=0? 'var(--win)': 'var(--loss)'}}>{live.profit>=0?`+${live.profit.toFixed(2)}`:live.profit.toFixed(2)}</strong>
       </div>
 
       <div className="grid mines" role="grid">

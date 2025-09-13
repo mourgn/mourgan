@@ -205,8 +205,8 @@ function CrashPanel({balance, setBalance, pushResult, globalLock, setGlobalLock}
 
       <div style={{display:'flex',alignItems:'center',justifyContent:'center',height:220}} className="panel">
         <div style={{textAlign:'center'}}>
-          <div style={{fontSize:56,fontWeight:900}}>{(multiplier - 1).toFixed(3)}x</div>
-          <div className="small" style={{marginTop:8}}>{isRunning ? 'RUNNING' : cashedAt ? `Cashed at ${(cashedAt - 1).toFixed(3)}x` : 'READY'}</div>
+          <div style={{fontSize:56,fontWeight:900}}>{multiplier.toFixed(2)}x</div>
+          <div className="small" style={{marginTop:8}}>{isRunning ? 'RUNNING' : cashedAt ? `Cashed at ${cashedAt}x` : 'READY'}</div>
         </div>
       </div>
     </div>
@@ -317,7 +317,7 @@ function MinesPanel({balance, setBalance, pushResult, globalLock, setGlobalLock}
       </div>
 
       <div className="small" style={{marginBottom:8}}>
-        Potential profit: <strong>{live.profit.toFixed(2)} ({(Math.max(0, multiplier - 1)).toFixed(3)}x)</strong>
+        Potential payout: <strong>{live.payout.toFixed(2)} ({live.multiplier.toFixed(2)}x)</strong> — Potential profit: <strong style={{color: live.profit>=0? 'var(--win)': 'var(--loss)'}}>{live.profit>=0?`+${live.profit.toFixed(2)}`:live.profit.toFixed(2)}</strong>
       </div>
 
       <div className="grid mines" role="grid">

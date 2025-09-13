@@ -231,57 +231,7 @@ function CrashPanel({balance, setBalance, pushResult, globalLock, setGlobalLock}
 }
 
 /* ================= MinesPanel ================= */
-function MinesPanel({
-// --- Robust calcPayout: penalty stretch then monotonic stake-like growth ---
-function calcPayout(safeClicks, baseBet, minesCount) {
-  const totalTiles = rows * cols;
-  const safeTiles = totalTiles - minesCount;
-
-  if (safeClicks <= 0) {
-    return { multiplier: 0, payout: 0, profit: -baseBet };
-  }
-
-  const HOUSE_EDGE = 0.99;
-  // compute fair multiplier via combinatorics for k safe picks
-  function fairMultiplierFor(k) {
-    let num = 1, den = 1;
-    for (let i = 0; i < k; i++) {
-      num *= (safeTiles - i);
-      den *= (totalTiles - i);
-    }
-    if (den === 0) return 1;
-    return (num / den) * (totalTiles / safeTiles) * HOUSE_EDGE;
-  }
-
-  // penalty stretch length depends on mines (fewer mines => longer penalty)
-  const penaltyStretch = Math.max(2, Math.floor((25 - minesCount) / 2));
-
-  // penalty multipliers for first few picks (guaranteed <1)
-  const penaltyCurve = [0.60, 0.72, 0.86, 0.94];
-
-  // compute sequence of multipliers up to safeClicks and ensure monotonic non-decreasing
-  let prevMult = 0;
-  let mult = 0;
-  for (let k = 1; k <= safeClicks; k++) {
-    if (k <= penaltyStretch) {
-      mult = penaltyCurve[Math.min(k-1, penaltyCurve.length-1)];
-    } else {
-      // use fair multiplier for this k
-      mult = fairMultiplierFor(k);
-    }
-    // enforce monotonic increase compared to prevMult
-    if (k > 1 && mult < prevMult) {
-      mult = prevMult * 1.02; // small upward correction
-    }
-    prevMult = mult;
-  }
-
-  const payout = parseFloat((baseBet * prevMult).toFixed(2));
-  const profit = parseFloat((payout - baseBet).toFixed(2));
-  return { multiplier: prevMult, payout, profit };
-}
-
-balance, setBalance, pushResult, globalLock, setGlobalLock}){
+function MinesPanel({balance, setBalance, pushResult, globalLock, setGlobalLock}){
   const rows = 5, cols = 5, total = rows * cols
   const [mines, setMines] = useState(3)
   const [stake, setStake] = useState(10)

@@ -1,6 +1,7 @@
-// Crash distribution to control house edge
-export const crashDistribution = {
-  low: 0.65,  // 65% chance to crash below 1.0x
-  mid: 0.25,  // 25% chance between 1.0x and 3.0x
-  high: 0.10  // 10% chance above 3.0x
-};
+
+export function crashDistribution(){
+  // Simple house edge implementation: 90% chance to crash under 2x
+  const r = Math.random()
+  if(r < 0.9) return 0.2 + r*1.5
+  return 2 + (Math.random() * 8)
+}

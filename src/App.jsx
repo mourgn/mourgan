@@ -107,18 +107,19 @@ export default function App(){
 
 /* ================= CrashPanel ================= */
 
+
 function CrashPanel({balance, setBalance, pushResult, globalLock, setGlobalLock}){
   const [bet, setBet] = useState(10)
   const [isRunning, setIsRunning] = useState(false)
-  const [multiplier, setMultiplier] = useState(1.00)
+  const [multiplier, setMultiplier] = useState(0.00) // shown multiplier starts at 0
   const [cashedAt, setCashedAt] = useState(null)
   const rafRef = useRef(null)
   const lastRef = useRef(null)
-  const multiplierRef = useRef(1.00)
-  const cashedRef = useRef(null) // synchronous flag to avoid race between cashout and bust
+  const multiplierRef = useRef(0.00)
+  const cashedRef = useRef(null)
   const [target, setTarget] = useState(2.0)
-  const baseSpeedRef = useRef(0.7) // tuning value
-  const accel = 1.6 // exponent for speed growth
+  const baseSpeedRef = useRef(0.7)
+  const accel = 1.6
 
   useEffect(()=>{
     return ()=>{ if(rafRef.current) cancelAnimationFrame(rafRef.current) }
@@ -127,17 +128,15 @@ function CrashPanel({balance, setBalance, pushResult, globalLock, setGlobalLock}
   function start(){
     if (isRunning || bet <= 0) return
     if (bet > balance){ alert('Insufficient balance'); return }
-    // deduct bet immediately
     setBalance(b => Math.round((b - bet)*100)/100)
     cashedRef.current = null
     setCashedAt(null)
     setIsRunning(true)
-    setMultiplier(1.00)
-    multiplierRef.current = 1.00
+    setMultiplier(0.00)
+    multiplierRef.current = 0.00
     lastRef.current = null
     const t = computeTargetFromSeed()
     setTarget(t)
-    // start RAF
     rafRef.current = requestAnimationFrame(tick)
     setGlobalLock(true)
   }
@@ -146,48 +145,34 @@ function CrashPanel({balance, setBalance, pushResult, globalLock, setGlobalLock}
     if (!lastRef.current) lastRef.current = ts
     const dt = (ts - lastRef.current) / 1000
     lastRef.current = ts
-    // speed grows as multiplier grows (not based on target)
-    const speed = baseSpeedRef.current * Math.pow(Math.max(1, multiplierRef.current), accel - 1)
+    const speed = baseSpeedRef.current * Math.pow(Math.max(1, multiplierRef.current+1), accel - 1)
     const next = multiplierRef.current + dt * speed
-    multiplierRef.current = Math.round(next * 100) / 100
+    multiplierRef.current = Math.round(next * 1000) / 1000
     setMultiplier(multiplierRef.current)
 
-    // bust check
     if (multiplierRef.current >= target){
-      // bust event
       setIsRunning(false)
       setGlobalLock(false)
-      // if player didn't cash out (synchronous check), they lose (bet already deducted)
       if (cashedRef.current === null){
-        const record = { game: 'Crash', bet: bet, payout: 0, profit: -bet, time: Date.now() }
-        pushResult(record)
+        pushResult({ game: 'Crash', bet: bet, payout: 0, profit: -bet, time: Date.now() })
       }
-      // stop RAF and reset
       if (rafRef.current) cancelAnimationFrame(rafRef.current)
       rafRef.current = null
       lastRef.current = null
       return
     }
-    // continue
     rafRef.current = requestAnimationFrame(tick)
   }
 
   function doCashout(){
     if (!isRunning || cashedRef.current !== null) return
     const m = multiplierRef.current || multiplier
-    // IMPORTANT: UI displays (multiplier - 1) as the "shown" multiplier.
-    // We want payout = bet * shownMultiplier (not bet * m which is 1 + shownMultiplier).
-    const shown = Math.round((m - 1) * 100) / 100
-    const payout = Math.round(bet * shown * 100) / 100
+    const payout = Math.round(bet * m * 100) / 100
     const profit = Math.round((payout - bet) * 100) / 100
-    // mark cashed synchronously to avoid race with tick/bust
     cashedRef.current = m
     setCashedAt(m)
-    // add only the payout (since bet was already deducted at start)
     setBalance(b => Math.round((b + payout) * 100) / 100)
-    // record result now (user explicitly cashed out)
     pushResult({ game: 'Crash', bet: bet, payout: payout, profit: profit, time: Date.now() })
-    // stop the run and unlock immediately to avoid any double-recording
     setIsRunning(false)
     setGlobalLock(false)
     if (rafRef.current) cancelAnimationFrame(rafRef.current)
@@ -214,8 +199,8 @@ function CrashPanel({balance, setBalance, pushResult, globalLock, setGlobalLock}
 
       <div style={{display:'flex',alignItems:'center',justifyContent:'center',height:220}} className="panel">
         <div style={{textAlign:'center'}}>
-          <div style={{fontSize:56,fontWeight:900}}>{(multiplier - 1).toFixed(3)}x</div>
-          <div className="small" style={{marginTop:8}}>{isRunning ? (cashedAt ? `Cashed at ${(cashedAt - 1).toFixed(3)}x` : 'RUNNING') : (cashedAt ? `Cashed at ${(cashedAt - 1).toFixed(3)}x` : 'READY')}</div>
+          <div style={{fontSize:56,fontWeight:900}}>{multiplier.toFixed(3)}x</div>
+          <div className="small" style={{marginTop:8}}>{isRunning ? (cashedAt ? `Cashed at ${cashedAt.toFixed(3)}x` : 'RUNNING') : (cashedAt ? `Cashed at ${cashedAt.toFixed(3)}x` : 'READY')}</div>
         </div>
       </div>
     </div>

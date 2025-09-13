@@ -350,7 +350,7 @@ function MinesPanel({balance, setBalance, pushResult, globalLock, setGlobalLock}
         Potential payout: <strong>{live.payout.toFixed(2)} ({live.multiplier.toFixed(2)}x)</strong> — Potential profit: <strong style={{color: live.profit>=0? 'var(--win)': 'var(--loss)'}}>{live.profit>=0?`+${live.profit.toFixed(2)}`:live.profit.toFixed(2)}</strong>
       </div>
 
-      <div className="grid grid-cols-5 gap-3 w-full max-w-[600px] mx-auto" role="grid">
+      <div className="grid grid-cols-5 gap-4 w-full max-w-[700px] mx-auto">
         {Array.from({length: total}).map((_, idx)=>{
           const isRevealed = !!revealed[idx]
           const isMine = minePositions.includes(idx)
@@ -358,7 +358,7 @@ function MinesPanel({balance, setBalance, pushResult, globalLock, setGlobalLock}
             <button
               key={idx}
               onClick={()=>clickTile(idx)}
-              className="aspect-square w-full rounded-xl bg-purple-900/30 backdrop-blur-md hover:scale-105 transition-transform flex items-center justify-center text-lg"
+              className="aspect-square w-full rounded-2xl bg-purple-900/30 backdrop-blur-md hover:scale-105 transition-transform text-2xl""
             >
               {isRevealed ? (isMine ? '💣' : '✓') : ''}
             </button>

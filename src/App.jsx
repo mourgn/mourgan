@@ -358,7 +358,7 @@ function MinesPanel({balance, setBalance, pushResult, globalLock, setGlobalLock}
             <button
               key={idx}
               onClick={()=>clickTile(idx)}
-              className="aspect-square w-full rounded-2xl bg-purple-900/30 backdrop-blur-md hover:scale-105 transition-transform text-2xl""
+              className="aspect-square w-full rounded-2xl bg-purple-900/30 backdrop-blur-md hover:scale-105 transition-transform text-2xl"
             >
               {isRevealed ? (isMine ? '💣' : '✓') : ''}
             </button>

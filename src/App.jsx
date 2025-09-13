@@ -119,7 +119,7 @@ function MinesPanel({balance, setBalance, pushResult, globalLock, setGlobalLock}
     }
   }
 
-  // Stake-style payout logic
+  // Updated payout logic using Stake formula
   function calcPayout(safeClicks, baseBet, minesCount){
     const totalTiles = total
     const safeTiles = totalTiles - minesCount

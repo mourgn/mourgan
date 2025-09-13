@@ -4,7 +4,7 @@
 // - mid: chance the game crashes between 1.0x–3.0x
 // - high: chance the game goes above 3.0x (rare big wins)
 //
-// IMPORTANT: Values must add up to 1.0 (100% total).
+// IMPORTANT: Values should sum to 1.0.
 export const crashDistribution = {
   low: 0.6,   // 60% chance <1.0x
   mid: 0.3,   // 30% chance 1.0–3.0x

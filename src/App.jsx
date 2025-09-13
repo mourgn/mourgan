@@ -1,6 +1,6 @@
 
-import React
-import { crashDistribution } from './config', { useEffect, useRef, useState } from 'react'
+import React, { useEffect, useRef, useState } from 'react'
+import { crashDistribution } from './config'
 
 // Helpers for localStorage/sessionStorage
 const LS_KEY = 'casino_v6_history_v2' // stores {stats, records}
@@ -107,39 +107,56 @@ export default function App(){
 }
 
 /* ================= CrashPanel ================= */
-function getCrashPoint() {
-  const r = Math.random();
-  if (r < crashDistribution.low) {
-    return Math.random(); // below 1.0x
-  } else if (r < crashDistribution.low + crashDistribution.mid) {
-    return 1 + Math.random() * 2; // 1.0x–3.0x
-  } else {
-    return 3 + Math.random() * 7; // 3.0x–10.0x
-  }
-}
-
 function CrashPanel({balance, setBalance, pushResult, globalLock, setGlobalLock}){
   const [bet, setBet] = useState(10)
   const [isRunning, setIsRunning] = useState(false)
-  const [multiplier, setMultiplier] = useState(1.00)
+  const [multiplier, setMultiplier] = useState(0.00)
   const [cashedAt, setCashedAt] = useState(null)
   const rafRef = useRef(null)
   const lastRef = useRef(null)
-  const multiplierRef = useRef(1.00)
+  const multiplierRef = useRef(0.00)
   const [target, setTarget] = useState(2.0)
   const baseSpeedRef = useRef(0.7) // tuning value
   const accel = 1.6 // exponent for speed growth
 
   useEffect(()=>{
-    return ()=>{ if(rafRef.current) cancelAnimationFrame(rafRef.current) }
+    
+function primaryAction(){
+  // Single button: Start -> Cash Out -> New Game
+  if (!isRunning && cashedAt === null){
+    // idle -> start
+    start()
+    return
+  }
+  if (isRunning && cashedAt === null){
+    // running -> cash out
+    doCashout()
+    return
+  }
+  if (!isRunning && cashedAt !== null){
+    // ended & cashed -> reset for new round
+    setCashedAt(null)
+    setMultiplier(0.00)
+    multiplierRef.current = 0.00
+    return
+  }
+}
+return ()=>{ if(rafRef.current) cancelAnimationFrame(rafRef.current) }
   },[])
 
   function computeTargetFromSeed(){
-    // generate a random-ish crash point using Math.random ()
-    const r = Math.random()
-    const val = 1 + Math.pow(1 - r, -1.1) * 0.6
-    return Math.round(Math.max(1.01, val) * 100) / 100
+  const r = Math.random()
+  if (r < crashDistribution.low) {
+    // below 1.0x (0.00 - 0.99)
+    return Math.round(Math.random() * 0.99 * 100) / 100
+  } else if (r < crashDistribution.low + crashDistribution.mid) {
+    // between 1.0 and 3.0
+    return Math.round((1 + Math.random() * 2) * 100) / 100
+  } else {
+    // big wins >3.0
+    return Math.round((3 + Math.random() * 7) * 100) / 100
   }
+}
 
   function start(){
     if (isRunning || bet <= 0) return
@@ -148,8 +165,8 @@ function CrashPanel({balance, setBalance, pushResult, globalLock, setGlobalLock}
     setBalance(b => Math.round((b - bet)*100)/100)
     setCashedAt(null)
     setIsRunning(true)
-    setMultiplier(1.00)
-    multiplierRef.current = 1.00
+    setMultiplier(0.00)
+    multiplierRef.current = 0.00
     lastRef.current = null
     const t = computeTargetFromSeed()
     setTarget(t)
@@ -208,24 +225,8 @@ function CrashPanel({balance, setBalance, pushResult, globalLock, setGlobalLock}
         </div>
         <div style={{marginLeft:'auto'}} className="small">Target (hidden)</div>
         <div>
-          
-          <div style={{display:'flex', justifyContent:'center', marginTop:12}}>
-            <button
-              className="btn primary"
-              onClick={() => {
-                if (phase === 'idle') startGame();
-                else if (phase === 'playing') cashOut();
-                else resetGame();
-              }}
-              style={{minWidth:260}}
-            >
-              {phase==='idle' ? 'Start' : phase==='playing' ? 'Cash Out' : 'New Game'}
-            </button>
-          </div>
-
-        </div>
-        <div>
-          <button className="btn ghost" onClick={doCashout} disabled={!isRunning || cashedAt!==null}>Cash Out</button>
+          <div>
+          <button className={'btn primary'} onClick={primaryAction}>{!isRunning && cashedAt===null ? 'Start' : (isRunning ? 'Cash Out' : 'New Game')}</button>
         </div>
       </div>
 
@@ -346,19 +347,11 @@ function MinesPanel({balance, setBalance, pushResult, globalLock, setGlobalLock}
         Potential payout: <strong>{live.payout.toFixed(2)} ({live.multiplier.toFixed(2)}x)</strong> — Potential profit: <strong style={{color: live.profit>=0? 'var(--win)': 'var(--loss)'}}>{live.profit>=0?`+${live.profit.toFixed(2)}`:live.profit.toFixed(2)}</strong>
       </div>
 
-      <div className="grid mines" role="grid" style={{ width: "100%", maxWidth: "700px", margin: "0 auto" }}>
+      <div className="grid mines" role="grid">
         {Array.from({length: total}).map((_, idx)=>{
           const isRevealed = !!revealed[idx]
           const isMine = minePositions.includes(idx)
-          return (
-            <button
-              key={idx}
-              onClick={() => clickTile(idx)}
-              disabled={phase !== 'playing' || !!revealed[idx]}
-              className="tile aspect-square w-full rounded-xl"
-            >
-              {revealed[idx] ? (minePositions.includes(idx) ? '💣' : '✓') : ''}
-            </button>)
+          return <button key={idx} onClick={()=>clickTile(idx)} disabled={phase!=='playing'} className={'tile ' + (isRevealed ? (isMine ? 'mine' : 'safe') : '')}>{isRevealed ? (isMine ? '💣' : '✓') : ''}</button>
         })}
       </div>
 

@@ -109,11 +109,11 @@ export default function App(){
 function CrashPanel({balance, setBalance, pushResult, globalLock, setGlobalLock}){
   const [bet, setBet] = useState(10)
   const [isRunning, setIsRunning] = useState(false)
-  const [multiplier, setMultiplier] = useState(1.00)
+  const [multiplier, setMultiplier] = useState(0.00)
   const [cashedAt, setCashedAt] = useState(null)
   const rafRef = useRef(null)
   const lastRef = useRef(null)
-  const multiplierRef = useRef(1.00)
+  const multiplierRef = useRef(0.00)
   const [target, setTarget] = useState(2.0)
   const baseSpeedRef = useRef(0.7) // tuning value
   const accel = 1.6 // exponent for speed growth
@@ -136,8 +136,8 @@ function CrashPanel({balance, setBalance, pushResult, globalLock, setGlobalLock}
     setBalance(b => Math.round((b - bet)*100)/100)
     setCashedAt(null)
     setIsRunning(true)
-    setMultiplier(1.00)
-    multiplierRef.current = 1.00
+    setMultiplier(0.00)
+    multiplierRef.current = 0.00
     lastRef.current = null
     const t = computeTargetFromSeed()
     setTarget(t)

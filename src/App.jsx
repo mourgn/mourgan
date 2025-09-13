@@ -345,8 +345,8 @@ function MinesPanel({balance, setBalance, pushResult, globalLock, setGlobalLock}
         })}
       </div>
 
-      <div style={{display:'flex',gap:12,alignItems:'center'}}>
-        <button className={'btn primary'} onClick={primaryAction}>{phase==='idle'?'Start': phase==='playing'?'Cash Out':'New Game'}</button>
+      <div className="flex justify-center mt-4">
+        <button className={"btn primary"} onClick={primaryAction}>{phase==='idle'?'Start': phase==='playing'?'Cash Out':'New Game'}</button>
         <div className="small">Note: Balance deducted when Start pressed. Cash Out to collect winnings.</div>
       </div>
 

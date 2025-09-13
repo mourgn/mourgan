@@ -150,3 +150,11 @@ header {
   -webkit-backdrop-filter: blur(12px);
   color: #f1f1f1;
 }
+
+/* --- Global scrollbar removal patch --- */
+* { scrollbar-width: none; }
+*::-webkit-scrollbar { display: none; }
+.recent-winnings, .history, .recent-list, .history-list, div {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}

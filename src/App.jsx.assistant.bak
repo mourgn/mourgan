@@ -231,56 +231,6 @@ function CrashPanel({balance, setBalance, pushResult, globalLock, setGlobalLock}
 }
 
 /* ================= MinesPanel ================= */
-// --- START INSERTED: robust Stake-like payout (high house edge ~10%) ---
-function __calcPayoutObj(safeClicks, baseBet, minesCount, rows = 5, cols = 5) {
-  const totalTiles = rows * cols;
-  const safeTiles = totalTiles - minesCount;
-  const HOUSE_EDGE_FACTOR = 0.90; // strong house edge: payouts multiplied by 0.90
-  const penaltyCurve = [0.60, 0.72, 0.86, 0.94]; // guaranteed <1x early picks for first 4 clicks
-
-  if (!safeClicks || safeClicks <= 0) {
-    return { multiplier: 0, payout: 0, profit: -baseBet };
-  }
-
-  // Determine penalty stretch length (fewer mines -> longer penalty)
-  const penaltyStretch = Math.max(2, Math.floor((25 - minesCount) / 2));
-
-  let mult = 1;
-  if (safeClicks <= penaltyStretch) {
-    mult = penaltyCurve[Math.min(safeClicks - 1, penaltyCurve.length - 1)];
-  } else {
-    // Compute combinatorial fair multiplier for safeClicks
-    let num = 1, den = 1;
-    for (let i = 0; i < safeClicks; i++) {
-      num *= (safeTiles - i);
-      den *= (totalTiles - i);
-    }
-    if (den === 0) den = 1;
-    let fairMult = (num / den) * (totalTiles / safeTiles);
-    // compress range toward baseline to keep growth tame
-    mult = 0.6 + (fairMult - 0.6) * 0.6;
-    // boost late scaling a bit for very low-mine games
-    if (safeClicks > penaltyStretch && minesCount <= 5) {
-      mult *= 1 + (safeClicks - penaltyStretch) * 0.06;
-    }
-  }
-
-  // Apply house edge (strong reduction)
-  mult = mult * HOUSE_EDGE_FACTOR;
-
-  if (!isFinite(mult) || mult <= 0) mult = 0.6;
-  const payout = parseFloat((baseBet * mult).toFixed(2));
-  const profit = parseFloat((payout - baseBet).toFixed(2));
-  return { multiplier: mult, payout, profit };
-}
-
-function calcPayout(safeClicks, baseBet, minesCount) {
-  // Wrapper kept for compatibility. Some code expects an object, some a number.
-  // We'll return an object to be safest. If existing code used a number, they will need to read .payout.
-  return __calcPayoutObj(safeClicks, baseBet, minesCount);
-}
-// --- END INSERTED ---
-
 function MinesPanel({balance, setBalance, pushResult, globalLock, setGlobalLock}){
   const rows = 5, cols = 5, total = rows * cols
   const [mines, setMines] = useState(3)

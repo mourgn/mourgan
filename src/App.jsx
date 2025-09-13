@@ -109,18 +109,17 @@ export default function App(){
 
 
 
+
 function CrashPanel({balance, setBalance, pushResult, globalLock, setGlobalLock}){
   const [bet, setBet] = useState(10)
   const [isRunning, setIsRunning] = useState(false)
   const [multiplier, setMultiplier] = useState(0.000) // starts at 0
   const [cashedAt, setCashedAt] = useState(null)
   const rafRef = useRef(null)
-  const lastRef = useRef(null)
-  const multiplierRef = useRef(0.000)
+  const startTimeRef = useRef(null)
   const cashedRef = useRef(null)
   const [target, setTarget] = useState(2.0)
-  const baseSpeedRef = useRef(0.05) // ensures growth even at 0
-  const growthFactor = 0.12       // growth scales with multiplier
+  const growthRate = 1.15 // exponential base
 
   useEffect(()=>{
     return ()=>{ if(rafRef.current) cancelAnimationFrame(rafRef.current) }
@@ -134,8 +133,7 @@ function CrashPanel({balance, setBalance, pushResult, globalLock, setGlobalLock}
     setCashedAt(null)
     setIsRunning(true)
     setMultiplier(0.000)
-    multiplierRef.current = 0.000
-    lastRef.current = null
+    startTimeRef.current = performance.now()
     const t = computeTargetFromSeed()
     setTarget(t)
     rafRef.current = requestAnimationFrame(tick)
@@ -143,18 +141,12 @@ function CrashPanel({balance, setBalance, pushResult, globalLock, setGlobalLock}
   }
 
   function tick(ts){
-    if (!lastRef.current) lastRef.current = ts
-    const dt = (ts - lastRef.current) / 1000
-    lastRef.current = ts
-
-    // custom growth: always grows a bit even if near 0, accelerates over time
-    const next = multiplierRef.current + dt * (baseSpeedRef.current + multiplierRef.current * growthFactor)
-    multiplierRef.current = next
-    // rounding: keep 3 decimals <1.0, 2 decimals otherwise
-    const shown = multiplierRef.current < 1 ? Math.round(next * 1000) / 1000 : Math.round(next * 100) / 100
+    const elapsed = (ts - startTimeRef.current) / 1000
+    const value = Math.pow(growthRate, elapsed) - 1
+    const shown = value < 1 ? Math.round(value * 1000) / 1000 : Math.round(value * 100) / 100
     setMultiplier(shown)
 
-    if (multiplierRef.current >= target){
+    if (value >= target){
       setIsRunning(false)
       setGlobalLock(false)
       if (cashedRef.current === null){
@@ -162,7 +154,6 @@ function CrashPanel({balance, setBalance, pushResult, globalLock, setGlobalLock}
       }
       if (rafRef.current) cancelAnimationFrame(rafRef.current)
       rafRef.current = null
-      lastRef.current = null
       return
     }
     rafRef.current = requestAnimationFrame(tick)
@@ -170,7 +161,7 @@ function CrashPanel({balance, setBalance, pushResult, globalLock, setGlobalLock}
 
   function doCashout(){
     if (!isRunning || cashedRef.current !== null) return
-    const m = multiplierRef.current || multiplier
+    const m = multiplier
     const payout = Math.round(bet * m * 100) / 100
     const profit = Math.round((payout - bet) * 100) / 100
     cashedRef.current = m
@@ -181,7 +172,6 @@ function CrashPanel({balance, setBalance, pushResult, globalLock, setGlobalLock}
     setGlobalLock(false)
     if (rafRef.current) cancelAnimationFrame(rafRef.current)
     rafRef.current = null
-    lastRef.current = null
   }
 
   return (

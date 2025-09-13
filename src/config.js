@@ -1,6 +1,10 @@
 
-export function crashDistribution(){
-  const r = Math.random()
-  if(r < 0.9) return 0.2 + r*1.5
-  return 2 + (Math.random() * 8)
-}
+// config.js
+export const crashDistribution = {
+  houseEdge: 0.06, // ~6% edge
+};
+
+export const minesConfig = {
+  baseMultiplier: 0.6, // start ~0.6x
+  houseEdge: 0.05, // ~5% edge
+};

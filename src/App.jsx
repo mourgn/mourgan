@@ -1,6 +1,5 @@
 
 import React, { useEffect, useRef, useState } from 'react'
-import { crashDistribution } from './config'
 
 // Helpers for localStorage/sessionStorage
 const LS_KEY = 'casino_v6_history_v2' // stores {stats, records}
@@ -115,47 +114,20 @@ function CrashPanel({balance, setBalance, pushResult, globalLock, setGlobalLock}
   const rafRef = useRef(null)
   const lastRef = useRef(null)
   const multiplierRef = useRef(0.00)
+  const cashedRef = useRef(null)
   const [target, setTarget] = useState(2.0)
   const baseSpeedRef = useRef(0.7) // tuning value
   const accel = 1.6 // exponent for speed growth
 
   useEffect(()=>{
-    
-function primaryAction(){
-  // Single button: Start -> Cash Out -> New Game
-  if (!isRunning && cashedAt === null){
-    // idle -> start
-    start()
-    return
-  }
-  if (isRunning && cashedAt === null){
-    // running -> cash out
-    doCashout()
-    return
-  }
-  if (!isRunning && cashedAt !== null){
-    // ended & cashed -> reset for new round
-    setCashedAt(null)
-    setMultiplier(0.00)
-    multiplierRef.current = 0.00
-    return
-  }
-}
-return ()=>{ if(rafRef.current) cancelAnimationFrame(rafRef.current) }
+    return ()=>{ if(rafRef.current) cancelAnimationFrame(rafRef.current) }
   },[])
 
-  function computeTargetFromSeed(){
-  const r = Math.random()
-  if (r < crashDistribution.low) {
-    // below 1.0x (0.00 - 0.99)
-    return Math.round(Math.random() * 0.99 * 100) / 100
-  } else if (r < crashDistribution.low + crashDistribution.mid) {
-    // between 1.0 and 3.0
-    return Math.round((1 + Math.random() * 2) * 100) / 100
-  } else {
-    // big wins >3.0
-    return Math.round((3 + Math.random() * 7) * 100) / 100
-  }
+  function computeTargetFromSeed() {
+  const r = Math.random();
+  if (r < 0.65) return +(Math.random() * 0.9).toFixed(2);      // 65% chance bust <1.0x
+  if (r < 0.90) return +(1 + Math.random() * 1.5).toFixed(2);  // 25% chance 1.0–2.5x
+  return +(2.5 + Math.random() * 5).toFixed(2);                // 10% chance 2.5–7.5x
 }
 
   function start(){
@@ -163,6 +135,7 @@ return ()=>{ if(rafRef.current) cancelAnimationFrame(rafRef.current) }
     if (bet > balance){ alert('Insufficient balance'); return }
     // deduct bet immediately
     setBalance(b => Math.round((b - bet)*100)/100)
+    cashedRef.current = null
     setCashedAt(null)
     setIsRunning(true)
     setMultiplier(0.00)
@@ -187,6 +160,16 @@ return ()=>{ if(rafRef.current) cancelAnimationFrame(rafRef.current) }
 
     // bust check
     if (multiplierRef.current >= target){
+      setIsRunning(false)
+      setGlobalLock(false)
+      if (cashedRef.current === null) {
+        pushResult({ game: 'Crash', bet: bet, payout: 0, profit: -bet, time: Date.now() })
+      }
+      if (rafRef.current) cancelAnimationFrame(rafRef.current)
+      rafRef.current = null
+      lastRef.current = null
+      return
+    
       // bust event
       setIsRunning(false)
       setGlobalLock(false)
@@ -212,8 +195,13 @@ return ()=>{ if(rafRef.current) cancelAnimationFrame(rafRef.current) }
     const profit = Math.round((payout - bet) * 100) / 100
     setBalance(b => Math.round((b + payout) * 100) / 100)
     setCashedAt(m)
+    cashedRef.current = m
     // record result now (user explicitly cashed out)
     pushResult({ game: 'Crash', bet: bet, payout: payout, profit: profit, time: Date.now() })
+    if (rafRef.current) cancelAnimationFrame(rafRef.current)
+    rafRef.current = null
+    setIsRunning(false)
+    setGlobalLock(false)
   }
 
   return (
@@ -225,8 +213,10 @@ return ()=>{ if(rafRef.current) cancelAnimationFrame(rafRef.current) }
         </div>
         <div style={{marginLeft:'auto'}} className="small">Target (hidden)</div>
         <div>
-          <div>
-          <button className={'btn primary'} onClick={primaryAction}>{!isRunning && cashedAt===null ? 'Start' : (isRunning ? 'Cash Out' : 'New Game')}</button>
+          <button className="btn primary" onClick={start} disabled={isRunning || globalLock}>Start</button>
+        </div>
+        <div>
+          <button className="btn ghost" onClick={doCashout} disabled={!isRunning || cashedAt!==null}>Cash Out</button>
         </div>
       </div>
 
@@ -239,8 +229,6 @@ return ()=>{ if(rafRef.current) cancelAnimationFrame(rafRef.current) }
     </div>
   )
 }
-
-  }
 
 /* ================= MinesPanel ================= */
 function MinesPanel({balance, setBalance, pushResult, globalLock, setGlobalLock}){

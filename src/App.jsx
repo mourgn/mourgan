@@ -281,7 +281,7 @@ function MinesPanel({balance, setBalance, pushResult, globalLock, setGlobalLock}
   function computeMultiplier(safeRevealed){
     // dynamic multiplier: lower profit for small mine counts
     const safeTotal = total - mines
-    const mineFactor = 0.18 + (mines / total) * 1.1
+    const mineFactor = 0.18 + (mines / total) * 1.8
     const perSafe = 0.28 * mineFactor
     const base = 0.56 + safeRevealed * perSafe * (safeTotal / Math.max(1, safeTotal))
     const multiplier = Math.max(0, base * (1 - 0.06))
